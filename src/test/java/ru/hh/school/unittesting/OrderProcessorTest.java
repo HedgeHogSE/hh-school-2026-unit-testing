@@ -1,4 +1,4 @@
-package ru.hh.school.unittesting.example;
+package ru.hh.school.unittesting;
 
 import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -16,6 +16,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
+import ru.hh.school.unittesting.example.OrderProcessor;
+import ru.hh.school.unittesting.example.PaymentService;
 
 @ExtendWith(MockitoExtension.class)
 class OrderProcessorTest {
