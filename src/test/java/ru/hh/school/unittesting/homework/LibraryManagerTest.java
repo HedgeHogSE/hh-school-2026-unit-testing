@@ -1,4 +1,4 @@
-package ru.hh.school.unittesting;
+package ru.hh.school.unittesting.homework;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -13,9 +13,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.ArgumentMatchers.anyString;
 import org.mockito.junit.jupiter.MockitoExtension;
-import ru.hh.school.unittesting.homework.LibraryManager;
-import ru.hh.school.unittesting.homework.NotificationService;
-import ru.hh.school.unittesting.homework.UserService;
 
 @ExtendWith(MockitoExtension.class)
 class LibraryManagerTest {
@@ -46,64 +43,47 @@ class LibraryManagerTest {
     }
 
     @Test
-    void borrowBookShouldReturnTrueWhenUserIsActiveAndBookAvailable() {
-        when(userService.isUserActive("user1")).thenReturn(true);
-        libraryManager.addBook("book1", 1);
-
-        boolean result = libraryManager.borrowBook("book1", "user1");
-
-        assertTrue(result);
-    }
-
-    @Test
-    void borrowBookShouldReturnFalseWhenBookNotAvailable() {
-        when(userService.isUserActive("user1")).thenReturn(true);
-
-        boolean result = libraryManager.borrowBook("book1", "user1");
-
-        assertFalse(result);
-        verify(notificationService, never()).notifyUser(anyString(), anyString());
-    }
-
-    @Test
-    void borrowBookShouldDecrementAvailableCopies() {
+    void borrowBookShouldSuccessWhenUserActiveAndBookAvailable() {
         when(userService.isUserActive("user1")).thenReturn(true);
         libraryManager.addBook("book1", 3);
 
-        libraryManager.borrowBook("book1", "user1");
-
+        assertTrue(libraryManager.borrowBook("book1", "user1"));
         assertEquals(2, libraryManager.getAvailableCopies("book1"));
+        verify(notificationService)
+                .notifyUser("user1", "You have borrowed the book: book1");
     }
 
     @Test
-    void borrowBookShouldNotifyUserOnSuccess() {
+    void borrowBookShouldReturnFalseWhenAvailableCopiesLessThanZero() {
         when(userService.isUserActive("user1")).thenReturn(true);
+        when(userService.isUserActive("user2")).thenReturn(true);
         libraryManager.addBook("book1", 1);
 
         libraryManager.borrowBook("book1", "user1");
-
-        verify(notificationService).notifyUser("user1", "You have borrowed the book: book1");
+        assertFalse(libraryManager.borrowBook("book1", "user2"));
     }
 
     @Test
-    void borrowBookShouldNotDecrementCopiesWhenUserIsNotActive() {
+    void borrowBookShouldNotBorrowBookWhenUserIsNotActive() {
         when(userService.isUserActive("user1")).thenReturn(false);
         libraryManager.addBook("book1", 5);
 
-        libraryManager.borrowBook("book1", "user1");
-
+        assertFalse(libraryManager.borrowBook("book1", "user1"));
         assertEquals(5, libraryManager.getAvailableCopies("book1"));
+        verify(notificationService)
+                .notifyUser("user1", "Your account is not active.");
     }
 
     @Test
-    void returnBookShouldIncreaseAvailableCopies() {
+    void returnBookShouldSuccessfullyReturnBookWhenBookBorrowedByUser() {
         when(userService.isUserActive("user1")).thenReturn(true);
         libraryManager.addBook("book1", 1);
         libraryManager.borrowBook("book1", "user1");
 
-        libraryManager.returnBook("book1", "user1");
-
+        assertTrue(libraryManager.returnBook("book1", "user1"));
         assertEquals(1, libraryManager.getAvailableCopies("book1"));
+        verify(notificationService)
+                .notifyUser("user1", "You have returned the book: book1");
     }
 
     @Test
@@ -112,13 +92,21 @@ class LibraryManagerTest {
         libraryManager.addBook("book1", 1);
         libraryManager.borrowBook("book1", "user1");
 
-        boolean result = libraryManager.returnBook("book1", "user2");
+        assertFalse(libraryManager.returnBook("book1", "user2"));
+    }
 
-        assertFalse(result);
+    @Test
+    void returnBookShouldReturnFalseWhenBookWasNotBorrowed() {
+        libraryManager.addBook("book1", 1);
+
+        assertFalse(libraryManager.returnBook("book1", "user1"));
+        verify(notificationService, never())
+                .notifyUser(anyString(), anyString());
     }
 
     @ParameterizedTest
     @CsvSource({
+            "0, false, false, 0.00",
             "2, false, false, 1.00",
             "2, true, false, 1.50",
             "2, false, true, 0.80",
